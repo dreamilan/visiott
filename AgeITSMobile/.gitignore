@@ -13,4 +13,5 @@ Mercury.modules
 *.c_date
 node_modules
 ios
+android/app/build
 
