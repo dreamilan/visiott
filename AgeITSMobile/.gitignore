@@ -12,6 +12,5 @@ Mercury.modules
 *.d
 *.c_date
 node_modules
-android
 ios
 

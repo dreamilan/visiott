@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-1399578801/@react-native-community_geolocation.iml" filepath="$PROJECT_DIR$/.idea/modules/-1399578801/@react-native-community_geolocation.iml" group="Hipp/@react-native-community_geolocation" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-164720492/@react-native-community_netinfo.iml" filepath="$PROJECT_DIR$/.idea/modules/-164720492/@react-native-community_netinfo.iml" group="Hipp/@react-native-community_netinfo" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/662546406/@react-native-community_toolbar-android.iml" filepath="$PROJECT_DIR$/.idea/modules/662546406/@react-native-community_toolbar-android.iml" group="Hipp/@react-native-community_toolbar-android" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Hipp.iml" filepath="$PROJECT_DIR$/.idea/modules/Hipp.iml" group="Hipp" />
+      <module fileurl="file://$PROJECT_DIR$/android.iml" filepath="$PROJECT_DIR$/android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/app.iml" group="Hipp/app" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-603659187/appcenter.iml" filepath="$PROJECT_DIR$/.idea/modules/-603659187/appcenter.iml" group="Hipp/appcenter" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-1116416762/appcenter-analytics.iml" filepath="$PROJECT_DIR$/.idea/modules/-1116416762/appcenter-analytics.iml" group="Hipp/appcenter-analytics" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-2092669675/appcenter-crashes.iml" filepath="$PROJECT_DIR$/.idea/modules/-2092669675/appcenter-crashes.iml" group="Hipp/appcenter-crashes" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/692043940/react-native-camera.iml" filepath="$PROJECT_DIR$/.idea/modules/692043940/react-native-camera.iml" group="Hipp/react-native-camera" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/64481382/react-native-device-info.iml" filepath="$PROJECT_DIR$/.idea/modules/64481382/react-native-device-info.iml" group="Hipp/react-native-device-info" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-195387417/react-native-gesture-handler.iml" filepath="$PROJECT_DIR$/.idea/modules/-195387417/react-native-gesture-handler.iml" group="Hipp/react-native-gesture-handler" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/808433009/react-native-orientation.iml" filepath="$PROJECT_DIR$/.idea/modules/808433009/react-native-orientation.iml" group="Hipp/react-native-orientation" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-905511021/react-native-pdf.iml" filepath="$PROJECT_DIR$/.idea/modules/-905511021/react-native-pdf.iml" group="Hipp/react-native-pdf" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/1862621840/react-native-safe-area-context.iml" filepath="$PROJECT_DIR$/.idea/modules/1862621840/react-native-safe-area-context.iml" group="Hipp/react-native-safe-area-context" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-1755013133/react-native-splash-screen.iml" filepath="$PROJECT_DIR$/.idea/modules/-1755013133/react-native-splash-screen.iml" group="Hipp/react-native-splash-screen" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/1243839237/react-native-svg.iml" filepath="$PROJECT_DIR$/.idea/modules/1243839237/react-native-svg.iml" group="Hipp/react-native-svg" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/803658063/react-native-vector-icons.iml" filepath="$PROJECT_DIR$/.idea/modules/803658063/react-native-vector-icons.iml" group="Hipp/react-native-vector-icons" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-1467720936/rn-fetch-blob.iml" filepath="$PROJECT_DIR$/.idea/modules/-1467720936/rn-fetch-blob.iml" group="Hipp/rn-fetch-blob" />
+    </modules>
+  </component>
+</project>
