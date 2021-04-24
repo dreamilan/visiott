@@ -22,7 +22,8 @@ import { Text,
   Linking,
   AsyncStorage,
   TouchableWithoutFeedback,
-  BackHandler
+  SafeAreaView,
+
 } from 'react-native';
 
 import { RNCamera } from 'react-native-camera';
@@ -38,7 +39,7 @@ import * as eva from '@eva-design/eva';
 import {
   ApplicationProvider, Layout, Text as TextUI, Input as InputUI, Button as ButtonUI, Spinner, Icon as IconUI,
   IconRegistry, Card, IndexPath, Menu, MenuItem, Autocomplete, AutocompleteItem, List, ListItem, ButtonGroup,
-  Avatar,   OverflowMenu,  TopNavigation, TopNavigationAction,  StyleService, useStyleSheet 
+  Avatar,   OverflowMenu,  TopNavigation, TopNavigationAction,  StyleService, useStyleSheet , Select, SelectItem
 } from '@ui-kitten/components';
 import Config from './app.json';
 import { EvaIconsPack } from '@ui-kitten/eva-icons';
@@ -94,10 +95,19 @@ const SearchIndicator = (props) => (
 );
 
  const renderOption = (item, index) => (
-    <MenuItem
+    <MenuItem>
       key={index}
-      title={item.StakeholderGLN}
-    />
+     title={item.StakeholderGLN}
+     <TextUI>aaa</TextUI>
+    </MenuItem>
+);
+const renderOptionSelectType = (item, index) => (
+    <SelectItem>
+      key={index}
+     title={item.ConstLangDesc}
+    <TextUI>aaa</TextUI>
+    </SelectItem>
+    
 );
 
  const renderItemProduct = ({ item, index }) => (
@@ -212,11 +222,12 @@ export default class App extends React.Component {
       strPassword: "",
       secureTextEntry: true,
       secureTextEntryIdentity: true,
-      token: "",
+      token: "11",
       userID : 0,
       selectedIndex: new IndexPath(-1),
       selectedIndexCombo: new IndexPath(-1),
       selectedIndexDoctor: new IndexPath(-1),
+      stakeholderTypeIndex: undefined,
       selectedValueDoctor: "",
       selectedDataDoctor: null,
       stakeholdersAPI : [
@@ -338,6 +349,12 @@ const renderMenuActionBack = () => (
     </TouchableWithoutFeedback>);
     
   }
+
+  setSelectedIndex = (index) => {
+    
+    this.setState({ stakeholderTypeIndex: new IndexPath(index.row) });
+    
+  }
       
   ClearSearchData = () => {
     this.setState({selectedValueDoctor : "" })
@@ -372,7 +389,9 @@ AlertIcon = (props) => (
     if (this.state.buttonGroupIndex > 0)
       this.setState({ buttonGroupIndex: 0 });
     else if (this.state.buttonGroupIndex == 0 && this.state.selectedIndex.row > -1)
-      this.setState({ selectedIndex: new IndexPath(-1) });
+      this.setState({ selectedIndex: new IndexPath(-1),   selectedIndexCombo: new IndexPath(-1),
+      selectedIndexDoctor: new IndexPath(-1),
+      stakeholderTypeIndex: undefined, });
     else if (this.state.selectedIndex.row == -1 && this.state.token != "")
       this.setState({ token: "",strUsername:"",strPassword:"",data:null,qrvalue:null });
     else
@@ -456,10 +475,8 @@ AlertIcon = (props) => (
       promise.then(resolve, reject)
     })
   }
-  const intTimeout = 20000;
-  
  let oData =  await
- timeout(intTimeout,fetch(url, {
+ timeout(Config.intTimeout,fetch(url, {
  method: 'GET',
  headers: {
    Accept: 'application/json',
@@ -510,10 +527,8 @@ AlertIcon = (props) => (
       promise.then(resolve, reject)
     })
   }
-  const intTimeout = 20000;
-  
  let oData =  await
- timeout(intTimeout,fetch(url, {
+ timeout(Config.intTimeout,fetch(url, {
  method: 'POST',
  headers: {
    Accept: 'application/json',
@@ -566,71 +581,82 @@ AlertIcon = (props) => (
 }
   async getStakeholders(strGLN) {
     var url = this.state.serverURL.endsWith("/") ? this.state.serverURL : this.state.serverURL + '/';
-    url += "api/StakeholderAut/SearchStakeholderByIntegrationParam?strGLN=" + strGLN
-    this.setState({
-     buttonLoading: true,
-   });
-  function timeout(ms, promise) {
-    return new Promise(function(resolve, reject) {
-      setTimeout(function() {
-        reject(new Error("timeout"))
-      }, ms)
-      promise.then(resolve, reject)
-    })
-  }
-  const intTimeout = 20000;
-  
- let oData =  await
- timeout(intTimeout,fetch(url, {
- method: 'GET',
- headers: {
-   Accept: 'application/json',
-   'Content-Type': 'application/json',
-   "Authorization" : "Bearer "+ this.state.token,
-   keepalive:false,
-   }
-}))
- .then((response) => response.json())
- .then((responseJson) => {
-    
-   if (responseJson.error != null) {
-      this.setState({error: responseJson.error_description
-   }, function(){
-     
-   });
-   }
-   else {
+    var stakeholderType = this.state.stakeholderTypes[this.state.stakeholderTypeIndex.row]?.Const?.ConstValue;
+    if (stakeholderType !== null && stakeholderType != "")
+    {
+      url += "api/StakeholderAut/SearchStakeholderByIntegrationParam?strGLN=" + strGLN + "&strParamValueAsString=" + stakeholderType;
       this.setState({
-        stakeholdersAPI: responseJson,
-        stakeholders : responseJson
-   }, function(){
-     
+        buttonLoading: true,
       });
-     console.log(this.state.stakeholdersAPI);
-     console.log("STRGLN : " + strGLN);
-     this.onChangeText(strGLN, false);
-   }
-   this.setState({
-     IsLoading: false,
-     buttonLoading: false,
-     searching: false
-   });
 
- })
- .catch((error) =>{
-   this.setState({
-     error: "getStakeholders beklenmeyen hata :" + JSON.stringify(error),
-     IsLoading: false,buttonLoading: false,
-     searching: false
-   });
- });
+         
+        function timeout(ms, promise) {
+          return new Promise(function(resolve, reject) {
+            setTimeout(function() {
+              reject(new Error("timeout"))
+            }, ms)
+            promise.then(resolve, reject)
+          })
+        }
+        
+      let oData =  await
+      timeout(Config.intTimeout,fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        "Authorization" : "Bearer "+ this.state.token,
+        keepalive:false,
+        }
+      }))
+      .then((response) => response.json())
+      .then((responseJson) => {
+          
+        if (responseJson.error != null) {
+            this.setState({error: responseJson.error_description
+        }, function(){
+          
+        });
+        }
+        else {
+            this.setState({
+              stakeholdersAPI: responseJson,
+              stakeholders : responseJson
+        }, function(){
+          
+            });
+          console.log(this.state.stakeholdersAPI);
+          console.log("STRGLN : " + strGLN);
+          this.onChangeText(strGLN, false);
+        }
+        this.setState({
+          IsLoading: false,
+          buttonLoading: false,
+          searching: false
+        });
+
+      })
+      .catch((error) =>{
+        this.setState({
+          error: "getStakeholders beklenmeyen hata :" + JSON.stringify(error),
+          IsLoading: false,buttonLoading: false,
+          searching: false
+        });
+      });
+    }
+    else {
+      this.setState({
+          error: "Tip değeri boş olamaz!! Lütfen bir tip seçiniz..",          
+        });
+    }
+
   }
   
    async getStakeholderType() {
     var url = this.state.serverURL.endsWith("/") ? this.state.serverURL : this.state.serverURL + '/';
     url += "api/Const/GetConsts?strConstID=StakeholderType&strFilter="
     this.setState({
-     buttonLoadingSType: true,
+     IsLoading: true,
    });
   function timeout(ms, promise) {
     return new Promise(function(resolve, reject) {
@@ -640,10 +666,8 @@ AlertIcon = (props) => (
       promise.then(resolve, reject)
     })
   }
-  const intTimeout = 20000;
-  
  let oData =  await
- timeout(intTimeout,fetch(url, {
+ timeout(Config.intTimeout,fetch(url, {
  method: 'GET',
  headers: {
    Accept: 'application/json',
@@ -686,7 +710,6 @@ AlertIcon = (props) => (
       promise.then(resolve, reject)
     })
   }
-    const intTimeout = 20000;
     var strError = "";
     if (this.state.barcodes.length == 0)
       strError = "Lütfen ürün okutunuz!!";
@@ -703,7 +726,7 @@ AlertIcon = (props) => (
       };
       
     let oData =  await
-    timeout(intTimeout,fetch(url, {
+    timeout(Config.intTimeout,fetch(url, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
@@ -914,12 +937,18 @@ LoginHeader = () => {
               {this.state.stakeholders.map(renderOption)}
           </Autocomplete>*/
     return (
-        <View style={styles.middleContainer}>
+        <View style={styles.middleContainerHeader}>
          <Layout level="1" style={{flex: 1, justifyContent: 'flex-start', marginTop: "5%" ,alignItems: 'center', backgroundColor: "white", width: "80%", height:"80%"}}>
          <View style={styles.alternativeContainer}>
             <TextUI style={styles.text} status='control' appearance='alternative'>Hareket Bilgisi</TextUI>
           </View>
-          
+          <Select style={{ width: "100%", marginTop: "3%" }}
+              label='Tip'
+              placeholder='Tip seçiniz..'
+              selectedIndex={this.state.stakeholderTypeIndex}
+              onSelect={index => this.setSelectedIndex(index)}>
+               {this.state.stakeholderTypes.map(renderOptionSelectType)}
+            </Select>
           <InputUI style={{ width: "100%", marginTop: "3%" }}
             value={this.state.selectedValueDoctor}
             label='Numune Verilecek Kişi'
@@ -971,12 +1000,12 @@ LoginHeader = () => {
    
     return (
         <Layout style={{flex:50,flexDirection: 'column',
-        flexWrap: 'nowrap', justifyContent: "space-between", alignContent: "space-between", alignItems: "center", marginTop: "1%"
+        flexWrap: 'nowrap', justifyContent: "center", alignContent: "center", alignItems: "center", marginTop: "1%"
       }}>
         {this.state.buttonGroupIndex == 1 && (<ButtonUI onPress={() => {
           action = this.state.blnAdd ? "add" :"remove"; this.setState({ blnAdd: !this.state.blnAdd })
-        }} style={{flex:5,maxWidth:"15%",maxHeight:"30%", marginTop:"2%"}} status={ this.state.blnAdd ? 'success' : 'danger' }>
-          { this.state.blnAdd ? '+' : '-' }
+        }} style={{flex:5,maxWidth:"30%",maxHeight:"30%", marginTop:"2%"}} status={ this.state.blnAdd ? 'success' : 'danger' }>
+          { this.state.blnAdd ? 'Ekle' : 'Sil' }
         </ButtonUI>)}
                 <ButtonGroup style={{flex:45,width:"100%",alignItems:"center",justifyContent:"center"}} status='primary' >
                   <ButtonUI  style={{maxWidth:"33%",maxHeight: this.state.buttonGroupIndex == 1 ? "55%" : "35%"}} onPress={() => this.setState({buttonGroupIndex : 0})}>Kod Listesi</ButtonUI>
@@ -986,70 +1015,6 @@ LoginHeader = () => {
           </Layout>
     )
 }
-
-async onWait(){
-  function timeout(ms, promise) {
-    return new Promise(function(resolve, reject) {
-      setTimeout(function() {
-        reject(new Error("timeout"))
-      }, ms)
-      promise.then(resolve, reject)
-    })
-  }
-  const intTimeout = 30000;
-  const value = this.state.qrvalue;
-  const url = 'http://85.105.162.27:8030/api/Code/GetCode?strMobileAppID='+this.state.mobileAppID+'&strCode=';
-
-  if(this.state.latitude != null){
-   this.location = '&strLat='+this.state.latitude.toString();
-  }
-  else
-    this.location ='&strLat=';
-
-    if(this.state.longitude != null){
-      this.location =this.location+ '&strLong='+this.state.longitude.toString();
-    }
-    else
-       this.location =this.location+'&strLong=';
-
-
-  const HW = '&strWidth='+entireScreenWidth.toString()+'&strHeight='+entireScreenHeight.toString();
-  const customValue = '&strDeviceID='+this.state.deviceId.toString();
-  var bytes = [];
-  var deger = '';
-  
- for (var i = 0; i < value.length; ++i) {
-  if(value.charCodeAt(i).toString() != '29')
-  deger += value[i];
- }
- let oData =  await
- timeout(intTimeout,fetch(url+deger+this.location+HW+customValue, {
- method: 'GET',
- headers: {
-   Accept: 'application/json',
-   'Content-Type': 'application/json',
-   keepalive:false,
- },
-}))
- .then((response) => response.json())
- .then((responseJson) => {
-   
-   this.setState({
-     data: responseJson,
-     IsLoading: false,
-   }, function(){
-     
-   });
-
- })
- .catch((error) =>{
-   this.setState({
-     error: "Sunucuya erişilemiyor..", //JSON.stringify(error),
-     IsLoading: false,
-   });
- });
-}
-
   barcodeReceived(e) {
     var strBarcode = e.data;
 
@@ -1146,9 +1111,10 @@ return (
 }
 
   selectedItemChange(index) {
+    if (index?.row == 0)
+      this.getStakeholderType();
     
-    this.setState({ selectedIndex: index });
-    
+    this.setState({ selectedIndex: index });    
   }
   selectedItemChangeCombo(index) {
     
@@ -1215,6 +1181,7 @@ return (
      // }
       if ( this.state.token != null && this.state.token != "" && this.state.selectedIndex.row == 0) {
         if (this.state.buttonGroupIndex == 0) {
+          
           return (<>
            <IconRegistry icons={EvaIconsPack} />
            <ApplicationProvider {...eva} theme={eva.light}>
@@ -1225,7 +1192,7 @@ return (
                   {this.TransactionHeader()}
                   {this.TransactionProduct()}
                   {this.TransactionButtons()}
-                  {this.state.focusedCombo && (<View style={{flex:1,top:"22.4%",left:"8.9%",height:"55%",width: "82.5%",borderWidth:1,
+                  {this.state.focusedCombo && (<View style={{flex:1,top:"31.2%",left:"8.9%",height:"55%",width: "82.3%",borderWidth:1,
                     borderStyle: 'solid',
                     borderColor:'#3366FF',
                       borderLeftColor: '#3366FF',
@@ -1249,10 +1216,10 @@ return (
            <IconRegistry icons={EvaIconsPack} />
            <ApplicationProvider {...eva} theme={eva.light}>
                    {Platform.OS === 'ios' && (  <View style={{height:18,  backgroundColor: "#c6cfda",}}></View>)}
-             <View style={styles.container}>
-                 <View style={styles.contentContainer}>
+             <SafeAreaView style={styles.container}>
+                 <SafeAreaView style={styles.contentContainer}>
                    {this.TopNavigationImageTitleShowcase()}
-                   <View style = {{flex:230, width:"100%", height:"100%"}}>
+                   <SafeAreaView style = {{flex:230, width:"100%", height:"100%"}}>
           <RNCamera
             ref={ref => {
               this.camera = ref;
@@ -1270,12 +1237,12 @@ return (
                      <Viewfinder />
                      {this.state.camera.flashMode == "off" ? this.FlashPartOff() : this.FlashPartOn()}
                      {this.CodeRead()}
-                     </View>
+                     </SafeAreaView>
        
              {this.TransactionButtons()}
           
-          </View>
-      </View>
+          </SafeAreaView>
+      </SafeAreaView>
            </ApplicationProvider>
             </>
            );
@@ -1469,6 +1436,14 @@ const styles = EStyleSheet.create({
   },
   middleContainer: {
     flex: 55,
+    height: "100%",
+    width: "100%",
+    backgroundColor: "white",
+      alignItems: "center",
+      justifyContent: "center",
+  },
+   middleContainerHeader: {
+    flex: 90,
     height: "100%",
     width: "100%",
     backgroundColor: "white",

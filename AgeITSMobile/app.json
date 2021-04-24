@@ -1,5 +1,6 @@
 {
   "name": "Hipp",
   "displayName": "Hipp",
-  "ApiGateway": "http://192.168.100.200:8015/"
+  "ApiGateway": "http://192.168.100.200:8015/",
+  "intTimeout": 20000
 }
