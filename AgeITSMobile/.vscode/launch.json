@@ -6,9 +6,9 @@
     "configurations": [
         {
             "name": "Debug Android",
-            "cwd": "${workspaceFolder}",
-            "type": "reactnative",
             "request": "launch",
+            "type": "reactnative",
+            "cwd": "${workspaceFolder}",
             "platform": "android"
         }
     ]

@@ -20,7 +20,6 @@ import { Text,
   YellowBox,
   Alert,
   Linking,
-  AsyncStorage,
   TouchableWithoutFeedback,
   SafeAreaView,
 
@@ -30,6 +29,7 @@ import { RNCamera } from 'react-native-camera';
 import DeviceInfo from 'react-native-device-info';
 import Moment from 'moment';
 import Viewfinder from './Viewfinder';
+import AsyncStorage from '@react-native-community/async-storage'
 import GeoLocation from '@react-native-community/geolocation'
 import SplashScreen from 'react-native-splash-screen'
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
@@ -57,19 +57,19 @@ const LoadingIndicator = (props) => (
 );
 scannedCode = "";
 popupOpened = false;
-action = "add";
+action = "";
 const UseStyleSheetSimpleUsageShowcase = () => {
-  const styles = useStyleSheet(themedStyles);
+  const styles = useStyleSheet(themedStyles(action));
   return (
     popupOpened && (<View style={styles.container}>
       <TextUI category="h6" status='control'>
-        {scannedCode}
+        {action == "add" ? "Kod harekete eklendi." : action == "remove" ? "Kod hareketten çıkartıldı." : action == "exist" ?"Harekette olan bir kod okutuldu!" : "Harekette olmayan bir kod okutuldu!"}
       </TextUI>
     </View>)
   );
 };
 
-const themedStyles = StyleService.create({
+const themedStyles = (actionVal) => StyleService.create({
   container: {
     top: "5%",
     position: "absolute",
@@ -78,7 +78,7 @@ const themedStyles = StyleService.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: action == "add" ? 'color-success-default' : 'color-danger-default',
+    backgroundColor: actionVal == "add" || actionVal == "remove" ? 'color-success-default' : 'color-danger-default',
     borderWidth:1,
                     borderStyle: 'solid',
                     borderColor:'white',
@@ -95,18 +95,11 @@ const SearchIndicator = (props) => (
 );
 
  const renderOption = (item, index) => (
-    <MenuItem>
-      key={index}
-     title={item.StakeholderGLN}
-     <TextUI>aaa</TextUI>
-    </MenuItem>
+    <MenuItem key={item.id}
+      title={item?.stakeholderGLN}/>
 );
-const renderOptionSelectType = (item, index) => (
-    <SelectItem>
-      key={index}
-     title={item.ConstLangDesc}
-    <TextUI>aaa</TextUI>
-    </SelectItem>
+const renderOptionSelectType = (item) => (
+    <SelectItem key={item.id} title={item.constLangDesc}/>
     
 );
 
@@ -189,6 +182,7 @@ export default class App extends React.Component {
     super(props);
     this.camera = null;
 
+    //logOutSession
     this.state = {
       mobileAppID : "00001",
       type: '',
@@ -222,7 +216,7 @@ export default class App extends React.Component {
       strPassword: "",
       secureTextEntry: true,
       secureTextEntryIdentity: true,
-      token: "11",
+      token: "",
       userID : 0,
       selectedIndex: new IndexPath(-1),
       selectedIndexCombo: new IndexPath(-1),
@@ -241,7 +235,12 @@ export default class App extends React.Component {
       searching: false,
       popoverVisible: true,
       menuVisible: false,
-      stakeholderTypes:[]
+      stakeholderTypes: [],
+      stakeholderTypeSelected: {},
+      errorCount: 0,
+      blnPassDisabled: false,
+      blnUserNameDisabled: false,
+      blnCompGLNDisabled:false
       
     };
     console.disableYellowBox = true;
@@ -276,14 +275,68 @@ renderIcon = (props) => (
 
   }*/
 
+
+  logOutSession = () => {
+    this.setState({ mobileAppID : "00001",
+      type: '',
+      data: null,
+      infiniteAnimationIconRef : null,
+      qrvalue: '',
+      opneScanner: false,
+      error: null,
+      IsLoading: true,
+      method :0,// 0 GetLocation,
+                // 1 onWait (WEB API)
+                // 2 Pdf
+      latitude: null,
+      longtude: null,
+      sayi: 0,
+      deviceId: '',
+      camera: {
+        type: RNCamera.Constants.Type.back,
+        flashMode: "off",
+        barcodeFinderVisible: false
+      },
+      pdf: null,
+      isConnected: true,
+      stakeholderGLN: "",
+      tmpStakeholderGLN: "",
+      buttonLoading: false,
+      apiGateway : Config.ApiGateway,
+      stakeholderData: { key: "", value: "" },
+      serverURL: "",
+      strUsername: "",
+      strPassword: "",
+      secureTextEntry: true,
+      secureTextEntryIdentity: true,
+      token: "",
+      userID : 0,
+      selectedIndex: new IndexPath(-1),
+      selectedIndexCombo: new IndexPath(-1),
+      selectedIndexDoctor: new IndexPath(-1),
+      stakeholderTypeIndex: undefined,
+      selectedValueDoctor: "",
+      selectedDataDoctor: null,
+      stakeholdersAPI : [
+      ],
+      stakeholders: [],
+      barcodes: [],
+      buttonGroupIndex: 0,
+      blnAdd: true,
+      intTryCount: 0,
+      focusedCombo: false,
+      searching: false,
+      popoverVisible: true,
+      menuVisible: false,
+      stakeholderTypes: [], stakeholderTypeSelected: {}
+    });
+  };
   TopNavigationImageTitleShowcase = () => {
 
   const toggleMenu = () => {
     this.setState({ menuVisible: !this.state.menuVisible });
   };
-  const changeToken = () => {
-    this.setState({ token: "" });
-  };
+  
 
   const renderMenuAction = () => (
     <TopNavigationAction icon={MenuIcon} onPress={toggleMenu}/>
@@ -296,7 +349,7 @@ renderIcon = (props) => (
         visible={this.state.menuVisible}
         onBackdropPress={toggleMenu}>
         <MenuItem accessoryLeft={InfoIcon} title='About'/>
-        <MenuItem accessoryLeft={LogoutIcon} title='Logout' onPress={changeToken}/>
+        <MenuItem accessoryLeft={LogoutIcon} title='Logout' onPress={this.logOutSession}/>
       </OverflowMenu>
     </React.Fragment>
     );
@@ -342,17 +395,18 @@ const renderMenuActionBack = () => (
 
  renderIconCombo = (props) => {
     
-       return (<TouchableWithoutFeedback >
+       return (
       <ButtonUI onPress={!this.state.searching ? this.searchStakeholder : ""} style={{ maxWidth: "10%",maxHeight: "10%" }} appearance='outline' accessoryLeft={this.state.searching ? LoadingIndicator : SearchIndicator}>
       
     </ButtonUI>
-    </TouchableWithoutFeedback>);
+   );
     
   }
 
   setSelectedIndex = (index) => {
     
-    this.setState({ stakeholderTypeIndex: new IndexPath(index.row) });
+    this.setState({ stakeholderTypeIndex: index });
+    this.setState({ stakeholderTypeSelected: this.state.stakeholderTypes[index.row] });
     
   }
       
@@ -391,9 +445,9 @@ AlertIcon = (props) => (
     else if (this.state.buttonGroupIndex == 0 && this.state.selectedIndex.row > -1)
       this.setState({ selectedIndex: new IndexPath(-1),   selectedIndexCombo: new IndexPath(-1),
       selectedIndexDoctor: new IndexPath(-1),
-      stakeholderTypeIndex: undefined, });
+      stakeholderTypeIndex: undefined, stakeholderTypeSelected : {},selectedValueDoctor: "" });
     else if (this.state.selectedIndex.row == -1 && this.state.token != "")
-      this.setState({ token: "",strUsername:"",strPassword:"",data:null,qrvalue:null });
+      this.logOutSession();
     else
       blnExit = true;
     
@@ -465,7 +519,8 @@ AlertIcon = (props) => (
     const url = this.state.apiGateway+'/api/Stakeholder/CheckStakeholder?strGLN='+this.state.tmpStakeholderGLN;
   
     this.setState({
-     buttonLoading: true,
+      buttonLoading: true,
+      blnCompGLNDisabled:true
    });
   function timeout(ms, promise) {
     return new Promise(function(resolve, reject) {
@@ -499,7 +554,8 @@ AlertIcon = (props) => (
    } else {
      this.setState({
      buttonLoading: false,
-     IsLoading: false
+     IsLoading: false,
+      blnCompGLNDisabled:false
    });
    }
    
@@ -508,7 +564,8 @@ AlertIcon = (props) => (
  .catch((error) =>{
    this.setState({
      error: "checkGLN beklenmeyen hata :" + JSON.stringify(error),
-     IsLoading: false,buttonLoading: false
+     IsLoading: false,buttonLoading: false,
+      blnCompGLNDisabled:false
    });
  });
   }
@@ -517,8 +574,16 @@ AlertIcon = (props) => (
     const url = this.state.serverURL.endsWith("/") ? this.state.serverURL +'token' : this.state.serverURL +'/token';
     if(!forFirstQuery)
           this.setState({
-          buttonLoading: true,
-        });
+            buttonLoading: true,
+            blnUserNameDisabled: true,
+            blnPassDisabled: true
+          });
+    else
+    {
+       this.setState({
+          errorCount: 0,
+          });
+      }
   function timeout(ms, promise) {
     return new Promise(function(resolve, reject) {
       setTimeout(function() {
@@ -560,9 +625,9 @@ AlertIcon = (props) => (
               }
               this.setState({
                 IsLoading: false,
-                buttonLoading: false
-              }, function(){
-                
+                buttonLoading: false,
+                blnUserNameDisabled: false,
+                blnPassDisabled: false
               });
    }
  
@@ -573,7 +638,9 @@ AlertIcon = (props) => (
           console.log("aa22");
    this.setState({
      error: "userLogin beklenmeyen hata :" + JSON.stringify(error),
-     IsLoading: false,buttonLoading: false
+     IsLoading: false,buttonLoading: false,
+            blnUserNameDisabled: false,
+            blnPassDisabled: false
    });
        }
   
@@ -581,8 +648,8 @@ AlertIcon = (props) => (
 }
   async getStakeholders(strGLN) {
     var url = this.state.serverURL.endsWith("/") ? this.state.serverURL : this.state.serverURL + '/';
-    var stakeholderType = this.state.stakeholderTypes[this.state.stakeholderTypeIndex.row]?.Const?.ConstValue;
-    if (stakeholderType !== null && stakeholderType != "")
+    var stakeholderType = this.state.stakeholderTypes[this.state.stakeholderTypeIndex?.row]?.const?.constValue;
+    if (stakeholderType != null && stakeholderType != "" && stakeholderType != undefined)
     {
       url += "api/StakeholderAut/SearchStakeholderByIntegrationParam?strGLN=" + strGLN + "&strParamValueAsString=" + stakeholderType;
       this.setState({
@@ -622,8 +689,10 @@ AlertIcon = (props) => (
             this.setState({
               stakeholdersAPI: responseJson,
               stakeholders : responseJson
-        }, function(){
-          
+            });
+          if (this.state.searching && this.state.stakeholders.length > 0)
+              this.setState({              
+              focusedCombo : true
             });
           console.log(this.state.stakeholdersAPI);
           console.log("STRGLN : " + strGLN);
@@ -646,7 +715,8 @@ AlertIcon = (props) => (
     }
     else {
       this.setState({
-          error: "Tip değeri boş olamaz!! Lütfen bir tip seçiniz..",          
+        error: "Tip değeri boş olamaz!! Lütfen bir tip seçiniz..",
+        searching: false
         });
     }
 
@@ -713,7 +783,7 @@ AlertIcon = (props) => (
     var strError = "";
     if (this.state.barcodes.length == 0)
       strError = "Lütfen ürün okutunuz!!";
-    else if (this.state.selectedValueDoctor == null || this.state.selectedValueDoctor == "")
+    else if ((this.state.selectedValueDoctor == null || this.state.selectedValueDoctor == "") || this.state.stakeholders.length < 1 )
       strError = "Lütfen numune verilecek kişiyi seçiniz!!";
     
     if (strError == "") {
@@ -750,7 +820,12 @@ AlertIcon = (props) => (
             selectedValueDoctor: "",
             stakeholders: [],
             stakeholdersAPI: [],
-            barcodes:[]
+            barcodes: [],
+            selectedIndexCombo: new IndexPath(-1),
+            selectedIndexDoctor: new IndexPath(-1),
+            stakeholderTypeIndex: undefined,
+            stakeholderTypes: [],
+            stakeholderTypeSelected: {}
       }); 
       Alert.alert(
         'Bilgi',
@@ -849,6 +924,7 @@ LoginHeader = () => {
 
           <InputUI style={{ width: "80%",marginTop:"10%" }}
             label="Kurum GLN"
+            disabled={this.state.blnCompGLNDisabled}
             placeholder='GLN bilgisini giriniz..'
             value={this.state.tmpStakeholderGLN}
             onChangeText={nextValue => this.setState({ tmpStakeholderGLN: nextValue })}
@@ -886,8 +962,9 @@ LoginHeader = () => {
          <View style={styles.alternativeContainer}>
             <TextUI style={styles.text} status='control' appearance='alternative'>Oturum Aç</TextUI>
           </View>
-          <InputUI style={{ width: "80%",marginTop:"10%" }}
+          <InputUI style={{ width: "80%", marginTop: "10%" }}
             label="Kullanıcı Adı"
+            disabled={this.state.blnUserNameDisabled}
             placeholder='Kullanıcı adınızı giriniz'
             value={this.state.strUsername}
             onChangeText={nextValue => this.setState({ strUsername: nextValue })}
@@ -895,6 +972,7 @@ LoginHeader = () => {
           <InputUI style={{ width: "80%",marginTop:"5%" }}
             value={this.state.strPassword}
             label='Şifre'
+            disabled={this.state.blnPassDisabled}
             placeholder='Şifrenizi giriniz'
             //caption='Should contain at least 8 symbols'
             accessoryRight={this.renderIcon}
@@ -917,13 +995,13 @@ LoginHeader = () => {
     if(query == null || query === "")
       this.setState({ stakeholders: this.state.stakeholdersAPI});
     else
-      this.setState({ stakeholders: this.state.stakeholdersAPI.filter(item => item.StakeholderGLN != null && item.StakeholderGLN.toLowerCase().includes(query.toLowerCase())) });
+      this.setState({ stakeholders: this.state.stakeholdersAPI.filter(item => item.stakeholderGLN != null && item.stakeholderGLN.toLowerCase().includes(query.toLowerCase())) });
     
     if(this.state.stakeholders.length < 1) this.setState({ focusedCombo: false })
   };
 
   onSelect(index) {
-    this.setState({ selectedValueDoctor: this.state.stakeholders[index].StakeholderGLN });
+    this.setState({ selectedValueDoctor: this.state.stakeholders[index].stakeholderGLN });
   };
 
   TransactionHeader = () => {
@@ -943,7 +1021,8 @@ LoginHeader = () => {
             <TextUI style={styles.text} status='control' appearance='alternative'>Hareket Bilgisi</TextUI>
           </View>
           <Select style={{ width: "100%", marginTop: "3%" }}
-              label='Tip'
+            label='Tip'
+            value={this.state.stakeholderTypeSelected.constLangDesc}
               placeholder='Tip seçiniz..'
               selectedIndex={this.state.stakeholderTypeIndex}
               onSelect={index => this.setSelectedIndex(index)}>
@@ -1017,7 +1096,7 @@ LoginHeader = () => {
 }
   barcodeReceived(e) {
     var strBarcode = e.data;
-
+    action = this.state.blnAdd ? "add" : "remove";
     var bytes = [];
   var strTempBarcode = '';
   
@@ -1028,29 +1107,26 @@ LoginHeader = () => {
     strTempBarcode += strBarcode[i];
  }
     strBarcode = strTempBarcode;
-    var popup = false;
+    var popup = true;
     var blnAction = this.state.blnAdd;
     var control = this.state.barcodes.filter(b => b.value == strBarcode);
     if (control.length == 0 && blnAction) {
       this.state.barcodes.push({ value: strBarcode });
-      Vibration.vibrate();
-      scannedCode = strBarcode;
-      popupOpened = true;
-      popup = true;
-      this.setState({ data: null });
-        this.setState({ qrvalue: strBarcode });      
+      this.setState({ data: null });    
     }
-    else if (control.length > 0 && !blnAction) {
-      scannedCode = strBarcode;
-      popupOpened = true;
-      popup = true;
-      Vibration.vibrate();
-      this.setState({ qrvalue: strBarcode });
-      this.setState({ barcodes: this.state.barcodes.filter(b => b.value != strBarcode) });
-      
-      
+    else if (control.length > 0 && !blnAction) {      
+      this.setState({ barcodes: this.state.barcodes.filter(b => b.value != strBarcode) });   
     }
-
+    else {
+      if (control.length > 0 && blnAction)
+        action = "exist"
+      else
+        action = "notExist"
+    }
+    scannedCode = strBarcode;
+    Vibration.vibrate();
+    popupOpened = true;
+    this.setState({ qrvalue: strBarcode });
     if (popup) {
       
       setTimeout(
@@ -1118,7 +1194,7 @@ return (
   }
   selectedItemChangeCombo(index) {
     
-    this.setState({ selectedIndexCombo: index, focusedCombo:false, selectedValueDoctor: this.state.stakeholders[index.row].StakeholderGLN  });
+    this.setState({ selectedIndexCombo: index, focusedCombo:false, selectedValueDoctor: this.state.stakeholders[index.row].stakeholderGLN  });
        
   }
   
@@ -1134,6 +1210,8 @@ return (
     SplashScreen.hide();
     if(!this.state.isConnected)
     {
+      if (this.state.errorCount == 0) {
+        this.setState({ errorCount: 1 });
       Alert.alert(
         'Uyarı!',
         'İnternet bağlantısını kontrol ediniz.',
@@ -1142,6 +1220,9 @@ return (
         ],
         {cancelable: false},
       );
+      }
+      
+      this.logOutSession();
     }
     else if (this.state.isConnected && this.state.error != null){
       Alert.alert(
@@ -1264,8 +1345,8 @@ return (
                     borderLeftColor:'#DCDCDC',borderRadius:3}}
                     selectedIndex={this.state.selectedIndex}
                     onSelect={index => this.selectedItemChange(index)}>
-                     <MenuItem style={{height:100}} title='Numune Oluştur' />
-                     <MenuItem style={{height:100}} title='Numune Hareketlerini Listele'/>
+                     <MenuItem style={{height:100}} title='Numune Sarf Oluştur' />
+                     <MenuItem style={{height:100}} title='Numune Sarf Hareketlerini Listele'/>
                   </Menu>
                 </Card>
                 </View>
