@@ -240,8 +240,8 @@ export default class App extends React.Component {
       errorCount: 0,
       blnPassDisabled: false,
       blnUserNameDisabled: false,
-      blnCompGLNDisabled:false
-      
+      blnCompGLNDisabled:false,
+      prevDate: null
     };
     console.disableYellowBox = true;
     YellowBox.ignoreWarnings([
@@ -445,7 +445,7 @@ AlertIcon = (props) => (
     else if (this.state.buttonGroupIndex == 0 && this.state.selectedIndex.row > -1)
       this.setState({ selectedIndex: new IndexPath(-1),   selectedIndexCombo: new IndexPath(-1),
       selectedIndexDoctor: new IndexPath(-1),
-      stakeholderTypeIndex: undefined, stakeholderTypeSelected : {},selectedValueDoctor: "" });
+      stakeholderTypeIndex: undefined, stakeholderTypeSelected : {},selectedValueDoctor: "", barcodes:[] });
     else if (this.state.selectedIndex.row == -1 && this.state.token != "")
       this.logOutSession();
     else
@@ -1095,55 +1095,59 @@ LoginHeader = () => {
     )
 }
   barcodeReceived(e) {
-    var strBarcode = e.data;
-    action = this.state.blnAdd ? "add" : "remove";
-    var bytes = [];
-  var strTempBarcode = '';
-  
- for (var i = 0; i < strBarcode.length; ++i) {
-   if (strBarcode.charCodeAt(i).toString() == '29' && i == 0)
-     continue;
-   else
-    strTempBarcode += strBarcode[i];
- }
-    strBarcode = strTempBarcode;
-    var popup = true;
-    var blnAction = this.state.blnAdd;
-    var control = this.state.barcodes.filter(b => b.value == strBarcode);
-    if (control.length == 0 && blnAction) {
-      this.state.barcodes.push({ value: strBarcode });
-      this.setState({ data: null });    
-    }
-    else if (control.length > 0 && !blnAction) {      
-      this.setState({ barcodes: this.state.barcodes.filter(b => b.value != strBarcode) });   
-    }
-    else {
-      if (control.length > 0 && blnAction)
-        action = "exist"
-      else
-        action = "notExist"
-    }
-    scannedCode = strBarcode;
-    Vibration.vibrate();
-    popupOpened = true;
-    this.setState({ qrvalue: strBarcode });
-    if (popup) {
-      
-      setTimeout(
-        function () {
-          if (this.state.qrvalue == strBarcode) {
-            scannedCode = "";
-          popupOpened = false;
-          this.setState({ IsLoading: false });
-          
+    var d = new Date();
+    if (this.state.prevDate == null || d > this.state.prevDate) {
+        var strBarcode = e.data;
+        action = this.state.blnAdd ? "add" : "remove";
+        var bytes = [];
+        var strTempBarcode = '';
+         this.setState({ prevDate: d.setSeconds(d.getSeconds() + 2) });  
+      for (var i = 0; i < strBarcode.length; ++i) {
+        if (strBarcode.charCodeAt(i).toString() == '29' && i == 0)
+          continue;
+        else
+          strTempBarcode += strBarcode[i];
+      }
+      strBarcode = strTempBarcode;
+      var popup = true;
+      var blnAction = this.state.blnAdd;
+      var control = this.state.barcodes.filter(b => b.value == strBarcode);
+      if (control.length == 0 && blnAction) {
+        this.state.barcodes.push({ value: strBarcode });
+        this.setState({ data: null });    
+      }
+      else if (control.length > 0 && !blnAction) {      
+        this.setState({ barcodes: this.state.barcodes.filter(b => b.value != strBarcode) });   
+      }
+      else {
+        if (control.length > 0 && blnAction)
+          action = "exist"
+        else
+          action = "notExist"
+      }
+      scannedCode = strBarcode;
+      Vibration.vibrate();
+      popupOpened = true;
+      this.setState({ qrvalue: strBarcode });
+      if (popup) {
+        
+        setTimeout(
+          function () {
+            if (this.state.qrvalue == strBarcode) {
+              scannedCode = "";
+            popupOpened = false;
+            this.setState({ IsLoading: false });
+            
+            }
+            
           }
-          
-        }
-        .bind(this),
-        1000
-      );
-    }
+          .bind(this),
+          1000
+        );
+      }
   
+    }
+    
   }
   
   FlashPartOn = () => {

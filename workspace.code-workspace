@@ -2,12 +2,6 @@
 	"folders": [
 		{
 			"path": "."
-		},
-		{
-			"path": "AgeITSMobile"
-		},
-		{
-			"path": "VisioTT_ITS"
 		}
 	],
 	"settings": {}
