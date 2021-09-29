@@ -28,7 +28,7 @@ build/
 .gradle
 local.properties
 *.iml
-
+executionHistory.bin
 # node.js
 #
 node_modules/
